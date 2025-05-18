@@ -4,6 +4,7 @@ import pyautogui
 import time
 import tkinter as tk
 from googletrans import Translator
+import threading
 
 # 设置 tesseract 路径（根据你的安装路径）
 pytesseract.pytesseract.tesseract_cmd = r'E:\OCR\tesseract.exe'
@@ -13,23 +14,25 @@ region = [100, 100, 1280, 800]  # [left, top, width, height]
 
 translator = Translator()
 
-def update_text():
-    screenshot = pyautogui.screenshot(region=tuple(region))
-    # 转为灰度
-    img = screenshot.convert('L')
-    # 自适应二值化
-    img = ImageOps.autocontrast(img)
-    img = img.point(lambda x: 0 if x < 160 else 255, '1')
-    # 可选：锐化
-    img = img.filter(ImageFilter.SHARPEN)
-    text = pytesseract.image_to_string(img, lang='jpn')
-    try:
-        translated = translator.translate(text, src='ja', dest='zh-cn').text
-    except Exception as e:
-        translated = f"翻译出错: {e}"
-    text_widget.delete(1.0, tk.END)
-    text_widget.insert(tk.END, f"原文：\n{text}\n\n译文:\n{translated}")
-    root.after(1000, update_text)  # 每秒更新一次
+def update_text_async():
+    def task():
+        screenshot = pyautogui.screenshot(region=tuple(region))
+        img = screenshot.convert('L')
+        img = ImageOps.autocontrast(img)
+        img = img.point(lambda x: 0 if x < 160 else 255, '1')
+        img = img.filter(ImageFilter.SHARPEN)
+        text = pytesseract.image_to_string(img, lang='jpn')
+        try:
+            translated = translator.translate(text, src='ja', dest='zh-cn').text
+        except Exception as e:
+            translated = f"翻译出错: {e}"
+        def update_ui():
+            text_widget.delete(1.0, tk.END)
+            text_widget.insert(tk.END, f"原文：\n{text}\n\n译文:\n{translated}")
+        root.after(0, update_ui)
+        # 继续定时
+        root.after(1000, update_text_async)
+    threading.Thread(target=task, daemon=True).start()
 
 def move_start(event):
     box._drag_data = (event.x_root, event.y_root, region[0], region[1])
@@ -117,5 +120,5 @@ def mouse_move(event):
 canvas.bind("<ButtonPress-1>", mouse_down)
 canvas.bind("<B1-Motion>", mouse_move)
 
-update_text()
+update_text_async()
 root.mainloop()

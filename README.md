@@ -1,69 +1,59 @@
-# Game Translator（日文游戏实时翻译工具）
+# Game Translator
 
-## 简介
+一个基于 OCR 和机器翻译的实时日文文本识别与翻译工具，支持自定义截图区域，适合游戏等场景下的日文文本实时翻译。
 
-本项目是一个基于 OCR（光学字符识别）和 Google 翻译的日文游戏实时翻译工具。  
-它可以实时截取屏幕指定区域的内容，自动识别日文文本并翻译为中文，适合游戏、漫画等场景下的辅助理解。
+## 功能简介
 
-## 功能特色
-
-- 实时截屏指定区域，自动识别日文文本
-- 自动调用 Google 翻译，将日文翻译为中文
-- 支持鼠标拖动和缩放红色方框，灵活调整识别区域
-- 识别结果自动换行并支持滚动查看
-- 适用于色彩丰富、复杂背景的图片
-
-## 使用方法
-
-### 1. 安装依赖
-
-请先安装以下 Python 库：
-
-```sh
-pip install pillow pyautogui pytesseract googletrans==4.0.0-rc1
-```
-
-并确保已安装 [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)  
-安装后将 `tesseract.exe` 路径配置到代码中的 `pytesseract.pytesseract.tesseract_cmd`。
-
-### 2. 运行程序
-
-直接运行 `main.py`：
-
-```sh
-python main.py
-```
-
-### 3. 操作说明
-
-- 程序启动后，会弹出一个主窗口显示识别和翻译结果。
-- 屏幕上会出现一个红色半透明方框，表示当前的识别区域。
-- **拖动红框**：按住红框任意位置拖动，可移动识别区域。
-- **缩放红框**：按住红框右下角的小红块拖动，可调整识别区域大小。
-- 识别和翻译结果会自动刷新显示在主窗口中。
-
-## 常见问题
-
-- **识别不准？**  
-  可尝试调整识别区域大小、位置，或修改二值化阈值（`lambda x: 0 if x < 160 else 255`）。
-- **翻译失败？**  
-  可能是网络问题或 Google 翻译接口被限制，可稍后重试。
-- **Tesseract 报错？**  
-  请确认已正确安装 Tesseract，并配置了正确的路径，且已安装日文语言包（`jpn.traineddata`）。
+- 实时截取屏幕指定区域，自动识别日文文本并翻译为中文
+- 支持拖动和缩放截图区域
+- 采用多线程，界面流畅不卡顿
+- 支持彩色图片的文字提取（自动进行图像增强处理以提升识别率）
 
 ## 依赖环境
 
 - Python 3.7+
-- pillow
-- pyautogui
-- pytesseract
-- googletrans==4.0.0-rc1
-- Tesseract OCR（需安装日文语言包）
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)（需安装并配置路径）
+- pip 包：
+  - pytesseract
+  - pillow
+  - pyautogui
+  - googletrans
+  - tkinter（标准库自带）
 
-## 许可证
+## 安装方法
 
-MIT License
+1. 安装 Tesseract，并记下安装路径（如 `E:\OCR\tesseract.exe`）。
+2. 安装 Python 依赖：
+   ```bash
+   pip install pytesseract pillow pyautogui googletrans==4.0.0-rc1
+   ```
 
----
+## 使用方法
+
+1. 修改 `main.py` 中的 tesseract 路径为你的实际安装路径：
+   ```python
+   pytesseract.pytesseract.tesseract_cmd = r'E:\OCR\tesseract.exe'
+   ```
+2. 运行程序：
+   ```bash
+   python main.py
+   ```
+3. 拖动红色方框调整识别区域，右下角小红块可缩放区域。
+4. 程序会自动识别区域内的日文并翻译为中文，显示在主窗口。
+
+## 主要代码逻辑
+
+- 使用 `pyautogui.screenshot` 截取指定区域
+- 图像自动灰度、增强、二值化、锐化，提高 OCR 识别率
+- 用 `pytesseract` 识别日文文本
+- 用 `googletrans` 翻译为中文
+- 所有耗时操作均在后台线程执行，界面不卡顿
+
+## 注意事项
+
+- 若遇到窗口卡顿或无响应，请确保已安装所有依赖，并用管理员权限运行。
+- 若翻译失败，可能是网络问题或 Google 翻译接口限制。
+
+
 
 如有问题欢迎反馈！
