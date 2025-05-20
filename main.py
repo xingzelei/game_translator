@@ -1,27 +1,39 @@
-import pytesseract
-from PIL import Image, ImageFilter, ImageOps
+import os
+import easyocr  # 引入 EasyOCR
+from PIL import Image, ImageOps
 import pyautogui
-import time
 import tkinter as tk
 from googletrans import Translator
 import threading
+import numpy as np
 
-# 设置 tesseract 路径（根据你的安装路径）
-pytesseract.pytesseract.tesseract_cmd = r'E:\OCR\tesseract.exe'
-
+# 设置 EasyOCR 模型存储路径为当前文件所在目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+os.environ['EASYOCR_MODULE_PATH'] = os.path.join(current_dir, '.EasyOCR')
 # 初始截取区域
 region = [100, 100, 1280, 800]  # [left, top, width, height]
 
 translator = Translator()
 
+# 初始化 EasyOCR Reader（支持日文和英文），并启用 GPU
+reader = easyocr.Reader(['ja', 'en'], gpu=True)
+
+def preprocess_image(img):
+    # 转为灰度图（EasyOCR 不需要严格的二值化）
+    img = img.convert('L')
+    # 自适应增强对比度
+    img = ImageOps.autocontrast(img)
+    return img
+
 def update_text_async():
     def task():
         screenshot = pyautogui.screenshot(region=tuple(region))
-        img = screenshot.convert('L')
-        img = ImageOps.autocontrast(img)
-        img = img.point(lambda x: 0 if x < 160 else 255, '1')
-        img = img.filter(ImageFilter.SHARPEN)
-        text = pytesseract.image_to_string(img, lang='jpn')
+        img = preprocess_image(screenshot)
+        # 转换为 NumPy 数组（EasyOCR 需要 NumPy 格式的图像）
+        img_np = np.array(img)
+        # 使用 EasyOCR 进行文字识别
+        results = reader.readtext(img_np, detail=0)  # `detail=0` 只返回文字内容
+        text = '\n'.join(results)  # 将识别结果拼接为字符串
         try:
             translated = translator.translate(text, src='ja', dest='zh-cn').text
         except Exception as e:
@@ -89,36 +101,6 @@ canvas.create_rectangle(region[2]-16, region[3]-16, region[2]-2, region[3]-2, fi
 # 绑定拖动事件（左键拖动移动窗口）
 canvas.bind("<ButtonPress-1>", move_start)
 canvas.bind("<B1-Motion>", move_drag)
-def resize_check(event):
-    # 判断是否在右下角小方块区域
-    if region[2]-16 <= event.x <= region[2] and region[3]-16 <= event.y <= region[3]:
-        canvas.bind("<B1-Motion>", resize_drag)
-        canvas.bind("<ButtonRelease-1>", lambda e: canvas.bind("<B1-Motion>", move_drag))
-    else:
-        canvas.bind("<B1-Motion>", move_drag)
-canvas.bind("<ButtonPress-1>", resize_check, add='+')
-canvas.bind("<ButtonPress-3>", move_start)
-
-# 标志变量，记录当前是否在缩放
-is_resizing = {'flag': False}
-
-def mouse_down(event):
-    # 判断是否在右下角小方块
-    if region[2]-16 <= event.x <= region[2] and region[3]-16 <= event.y <= region[3]:
-        is_resizing['flag'] = True
-        resize_start(event)
-    else:
-        is_resizing['flag'] = False
-        move_start(event)
-
-def mouse_move(event):
-    if is_resizing['flag']:
-        resize_drag(event)
-    else:
-        move_drag(event)
-
-canvas.bind("<ButtonPress-1>", mouse_down)
-canvas.bind("<B1-Motion>", mouse_move)
 
 update_text_async()
 root.mainloop()

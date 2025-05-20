@@ -1,59 +1,64 @@
-# Game Translator
+# 实时游戏文本识别与翻译工具
 
-一个基于 OCR 和机器翻译的实时日文文本识别与翻译工具，支持自定义截图区域，适合游戏等场景下的日文文本实时翻译。
+这是一个使用 Python 开发的实时屏幕文本识别与翻译工具，主要用于识别屏幕指定区域内的日文文本，并将其翻译成中文。
 
-## 功能简介
+## 功能
 
-- 实时截取屏幕指定区域，自动识别日文文本并翻译为中文
-- 支持拖动和缩放截图区域
-- 采用多线程，界面流畅不卡顿
-- 支持彩色图片的文字提取（自动进行图像增强处理以提升识别率）
+*   **屏幕区域选择**：可以通过一个可拖动和调整大小的红色半透明方框来选择需要识别的屏幕区域。
+*   **实时文本识别**：使用 EasyOCR 对选定区域内的图像进行光学字符识别 (OCR)，支持日文和英文。
+*   **GPU 加速**：支持使用 GPU 进行 OCR，以提高识别速度（需要正确配置 CUDA 和 cuDNN）。
+*   **实时翻译**：使用 Google Translate API 将识别出的日文文本翻译成中文。
+*   **图形用户界面 (GUI)**：使用 Tkinter 创建一个简单的窗口，用于显示原文和译文。
 
-## 依赖环境
+## 技术栈
 
-- Python 3.7+
-- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)（需安装并配置路径）
-- pip 包：
-  - pytesseract
-  - pillow
-  - pyautogui
-  - googletrans
-  - tkinter（标准库自带）
+*   **Python 3**
+*   **EasyOCR**: 用于文本识别。
+*   **Pillow (PIL)**: 用于图像处理。
+*   **PyAutoGUI**: 用于屏幕截图。
+*   **Tkinter**: 用于创建图形用户界面。
+*   **googletrans**: 用于文本翻译。
+*   **NumPy**: EasyOCR 的依赖库。
 
-## 安装方法
+## 安装
 
-1. 安装 Tesseract，并记下安装路径（如 `E:\OCR\tesseract.exe`）。
-2. 安装 Python 依赖：
-   ```bash
-   pip install pytesseract pillow pyautogui googletrans==4.0.0-rc1
-   ```
+1.  **克隆或下载项目**
+2.  **安装依赖库**:
+    在项目根目录下打开终端，运行以下命令：
+    ```bash
+    pip install easyocr Pillow pyautogui googletrans==4.0.0rc1 numpy
+    ```
+    如果你希望使用 GPU 进行 OCR (推荐)，请确保你已安装 NVIDIA 驱动、CUDA Toolkit 和 cuDNN，并且安装了支持 GPU 的 PyTorch 版本。你可以访问 [PyTorch 官网](https://pytorch.org/get-started/locally/) 获取安装命令。
+
+3.  **EasyOCR 模型下载**:
+    首次运行脚本时，EasyOCR 会自动下载所需的模型文件。根据脚本中的设置，模型文件会下载到脚本所在目录下的 `.EasyOCR` 文件夹中。
 
 ## 使用方法
 
-1. 修改 `main.py` 中的 tesseract 路径为你的实际安装路径：
-   ```python
-   pytesseract.pytesseract.tesseract_cmd = r'E:\OCR\tesseract.exe'
-   ```
-2. 运行程序：
-   ```bash
-   python main.py
-   ```
-3. 拖动红色方框调整识别区域，右下角小红块可缩放区域。
-4. 程序会自动识别区域内的日文并翻译为中文，显示在主窗口。
-
-## 主要代码逻辑
-
-- 使用 `pyautogui.screenshot` 截取指定区域
-- 图像自动灰度、增强、二值化、锐化，提高 OCR 识别率
-- 用 `pytesseract` 识别日文文本
-- 用 `googletrans` 翻译为中文
-- 所有耗时操作均在后台线程执行，界面不卡顿
+1.  运行 `main.py` 脚本：
+    ```bash
+    python main.py
+    ```
+2.  程序启动后，会出现两个窗口：
+    *   一个主窗口，用于显示识别到的原文和翻译后的译文。
+    *   一个红色的半透明方框，这是截图区域。
+3.  **调整截图区域**：
+    *   **移动**：鼠标左键按住红色方框内部并拖动。
+    *   **调整大小**：鼠标左键按住红色方框右下角的小红块并拖动。
+4.  程序会自动定时截取红色方框内的图像，进行文字识别和翻译，并在主窗口中更新结果。
 
 ## 注意事项
 
-- 若遇到窗口卡顿或无响应，请确保已安装所有依赖，并用管理员权限运行。
-- 若翻译失败，可能是网络问题或 Google 翻译接口限制。
+*   翻译功能依赖于 `googletrans` 库，可能会受到网络连接和 Google Translate API 政策的影响。
+*   GPU 加速需要正确的环境配置。如果 GPU 不可用或配置不当，EasyOCR 会自动回退到 CPU 模式。
+*   识别的准确性取决于图像质量、字体、背景复杂度等因素。
 
+## 文件结构
 
-
-如有问题欢迎反馈！
+```
+game_translator/
+│
+├── main.py         # 主程序脚本
+├── .EasyOCR/       # EasyOCR 模型文件存储目录 (首次运行后自动创建)
+└── README.md       # 本说明文件
+```
